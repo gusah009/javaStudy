@@ -1,4 +1,4 @@
-package java.hyeonmo;
+package studyjava.hyeonmo;
 
 public class Main {
 

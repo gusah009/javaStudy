@@ -1,4 +1,4 @@
-package java.hyeonmo.item1;
+package studyjava.hyeonmo.item1;
 
 public class AlienDate implements Date {
 
