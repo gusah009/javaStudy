@@ -24,13 +24,15 @@ import java.util.Objects;
 //  public static List<String> suggestions(String typo) { ... }
 //}
 
-public class SpellChecker {
-  private static final Lexicon dictionary;
+public abstract class SpellChecker {
+
+  private final Lexicon dictionary;
 
   public SpellChecker(Lexicon dictionary) {
-    this.dictionary = Objects.requireNonNull(dictionary);
+    this.dictionary = dictionary;
   }
 
-  public static boolean isValid(String word) { ... }
-  public static List<String> suggestions(String typo) { ... }
+  public abstract boolean isValid(String word);
+
+  public abstract List<String> suggestions(String typo);
 }
