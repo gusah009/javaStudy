@@ -36,7 +36,7 @@ public class MemberService {
   @Transactional
   public String reserveMemberTeamChange(int seconds) {
     Date taskDate = getDatePlusSeconds(seconds);
-    Runnable task = () -> changeDefaultTeamMembersTeamTo("정현모");
+    Runnable task = () -> changeDefaultTeamMembersTeamToWithTransaction("정현모");
     schedulerService.scheduleTask(task, taskDate);
 
     return "SUCCESS";
@@ -44,6 +44,15 @@ public class MemberService {
 
   private Date getDatePlusSeconds(int seconds) {
     return Date.from(now().plusSeconds(seconds).toInstant(SEOUL_ZONE_OFFSET));
+  }
+
+  private void changeDefaultTeamMembersTeamToWithTransaction(String teamName) {
+    transactionTemplate.execute(new TransactionCallbackWithoutResult() {
+      @Override
+      protected void doInTransactionWithoutResult(TransactionStatus status) {
+        changeDefaultTeamMembersTeamTo(teamName);
+      }
+    });
   }
 
   private void changeDefaultTeamMembersTeamTo(String teamName) {
