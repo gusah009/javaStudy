@@ -3,21 +3,20 @@ package com.example.webblog.controller;
 import com.example.webblog.service.MemberService;
 import com.sun.istack.NotNull;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 
-@Controller
+@RestController
 @RequiredArgsConstructor
 public class MemberController {
 
   private final MemberService memberService;
 
-  @GetMapping("/reserve")
-  public String reserveMemberNameChange(
-      @RequestParam @NotNull Integer seconds
+  @PostMapping("/reserve")
+  public String reserveMemberTeamChange(
+      @RequestBody @NotNull Integer seconds
   ) {
-    return memberService.reserveMemberNameChange(seconds);
+    return memberService.reserveMemberTeamChange(seconds);
   }
-
 }

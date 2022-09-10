@@ -1,5 +1,6 @@
 package com.example.webblog.service;
 
+import static com.example.webblog.repository.Team.DEFAULT_NAME;
 import static com.example.webblog.service.MemberService.SEOUL_ZONE_OFFSET;
 import static java.time.LocalDateTime.now;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -12,6 +13,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
+import javax.xml.bind.annotation.XmlType.DEFAULT;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +23,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
 @Transactional
+@Slf4j
 class SchedulerServiceTest {
+
+  private static final String TEST_TEAM_NAME = "정현모 팀";
 
   @Autowired
   private SchedulerService schedulerService;
@@ -35,21 +41,24 @@ class SchedulerServiceTest {
   @DisplayName("스케줄 작업 테스트")
   public void testScheduledTask() throws Exception {
     // given
-    Member member1 = generateMember();
-    Member member2 = generateMember();
-    Member member3 = generateMember();
-    Member member4 = generateMember();
+    generateTeam(DEFAULT_NAME);
+    Team myTeam = generateTeam(TEST_TEAM_NAME);
+    generateMember();
+    generateMember();
+    generateMember();
     Date taskDate = getDatePlusSeconds(1);
-    Team myTeam = generateTeam("정현모");
     Runnable task = changeEveryMemberTeamTo(myTeam);
 
     // before tasking
-    List<Member> all = memberRepository.findAll();
-    assertThat(all).hasSize(4);
-    assertThat(all).contains(member1);
-    assertThat(all).contains(member2);
-    assertThat(all).contains(member3);
-    assertThat(all).contains(member4);
+    List<Member> beforeAllMembers = memberRepository.findAll();
+    List<Team> beforeAllMemberTeams = beforeAllMembers.stream().map(Member::getTeam).toList();
+    assertThat(beforeAllMemberTeams).hasSize(3);
+    assertThat(beforeAllMemberTeams.get(0)).isNotNull();
+    assertThat(beforeAllMemberTeams.get(1)).isNotNull();
+    assertThat(beforeAllMemberTeams.get(2)).isNotNull();
+    assertThat(beforeAllMemberTeams.get(0).getName()).isEqualTo(DEFAULT_NAME);
+    assertThat(beforeAllMemberTeams.get(1).getName()).isEqualTo(DEFAULT_NAME);
+    assertThat(beforeAllMemberTeams.get(2).getName()).isEqualTo(DEFAULT_NAME);
 
     // when
     schedulerService.scheduleTask(task, taskDate);
@@ -57,12 +66,15 @@ class SchedulerServiceTest {
     Thread.sleep(3000); // scheduler task가 완료되길 기다리기
 
     // after tasking
-    List<String> allMemberNames = all.stream().map(Member::getName).toList();
-    assertThat(all).hasSize(4);
-    assertThat(allMemberNames).contains(member1.getName());
-    assertThat(allMemberNames).contains(member2.getName());
-    assertThat(allMemberNames).contains(member3.getName());
-    assertThat(allMemberNames).contains(member4.getName());
+    List<Member> afterAllMembers = memberRepository.findAll();
+    List<Team> afterAllMemberTeams = afterAllMembers.stream().map(Member::getTeam).toList();
+    assertThat(afterAllMemberTeams).hasSize(3);
+    assertThat(afterAllMemberTeams.get(0)).isNotNull();
+    assertThat(afterAllMemberTeams.get(1)).isNotNull();
+    assertThat(afterAllMemberTeams.get(2)).isNotNull();
+    assertThat(afterAllMemberTeams.get(0).getName()).isEqualTo(TEST_TEAM_NAME);
+    assertThat(afterAllMemberTeams.get(1).getName()).isEqualTo(TEST_TEAM_NAME);
+    assertThat(afterAllMemberTeams.get(2).getName()).isEqualTo(TEST_TEAM_NAME);
   }
 
   private Team generateTeam(String teamName) {
@@ -75,22 +87,26 @@ class SchedulerServiceTest {
     return Date.from(now().plusSeconds(seconds).toInstant(SEOUL_ZONE_OFFSET));
   }
 
-  private Runnable changeEveryMemberTeamTo(Team team) {
+  @Transactional
+  public Runnable changeEveryMemberTeamTo(Team team) {
     return () -> {
-      List<Member> allJeongMembers = memberRepository.findAll();
-      for (Member member : allJeongMembers) {
+      List<Member> members = memberRepository.findAll();
+      for (Member member : members) {
         member.changeTeam(team);
       }
-      memberRepository.saveAll(allJeongMembers);
+      memberRepository.saveAll(members);
+      log.info(memberRepository.findAll().toString());
     };
   }
 
   private Member generateMember() {
     String uniqueVal = UUID.randomUUID().toString().substring(0, 5);
     int age = new Random().nextInt(50);
+    Team noTeam = teamRepository.findByName(DEFAULT_NAME).orElseThrow();
     return memberRepository.save(Member.builder()
         .name("name_" + uniqueVal)
         .age(age)
+        .team(noTeam)
         .build());
   }
 }
